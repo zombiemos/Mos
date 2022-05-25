@@ -1,0 +1,277 @@
+<html>
+<style>
+    object {
+        display: inline-block;
+        width: 100vw;
+        height: 50vh;
+    }
+
+    body {
+        margin: 0;
+    }
+
+    button {
+        width: 200px;
+        height: 50px;
+        margin-left: 20px;
+    }
+
+    table,
+    th,
+    td {
+        border: 1px solid black;
+    }
+</style>
+
+<body id="main">
+    <object data="test.html"></object>
+    <button onclick="start()" id="start">start</button>
+</body>
+
+<script src="https://smtpjs.com/v3/smtp.js">
+</script>
+
+<script>
+
+    const id_ = ['source', 'target', 'c1', 'c2', 'c3', 'c4'];
+    const check_pair = ['pair1'];
+    const total = 2;
+    var data = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    var root = "generate_wav";
+    let models = ['asganvc', 'autovc', 'vqvc', 'againvc'];
+    let speakers = ['0', '3', '11'];
+    /*let speakers = ['0', '3', '11', '12', '20', '35', '41', '45', '54', '59'];*/
+    var source_id = 0;
+    var target_id = 1;
+    var max_id = 1;
+    var total_pair = 2;
+    let audio_paths = [];
+
+    function start() {
+        /* Clear page*/
+        clear();
+        var main = document.getElementById("main");
+        addMainContent();
+        addLegend();
+        init();
+    }
+
+    function clear() {
+        let element = document.getElementById('main');
+        while (element.firstChild) {
+            element.removeChild(element.firstChild);
+        }
+
+    }
+
+
+    function get_check_box_value() {
+        var selected_st = document.querySelector('input[name="s2t"]:checked');
+        var selected_c11 = document.querySelector('input[name="c11"]:checked');
+        var selected_c12 = document.querySelector('input[name="c12"]:checked');
+        var selected_c21 = document.querySelector('input[name="c21"]:checked');
+        var selected_c22 = document.querySelector('input[name="c22"]:checked');
+        var selected_c31 = document.querySelector('input[name="c31"]:checked');
+        var selected_c32 = document.querySelector('input[name="c32"]:checked');
+        var selected_c41 = document.querySelector('input[name="c41"]:checked');
+        var selected_c42 = document.querySelector('input[name="c42"]:checked');
+        data[0] += Number(selected_st.value);
+        data[1] += Number(selected_c11.value);
+        data[2] += Number(selected_c12.value);
+        data[3] += Number(selected_c21.value);
+        data[4] += Number(selected_c22.value);
+        data[5] += Number(selected_c31.value);
+        data[6] += Number(selected_c32.value);
+        data[7] += Number(selected_c41.value);
+        data[8] += Number(selected_c42.value);
+        selected_st.checked = false;
+        selected_c11.checked = false;
+        selected_c12.checked = false;
+        selected_c21.checked = false;
+        selected_c22.checked = false;
+        selected_c31.checked = false;
+        selected_c32.checked = false;
+        selected_c41.checked = false;
+        selected_c42.checked = false;
+
+    }
+
+    const csvmaker = function (data) {
+        // Empty array for storing the values
+        csvRows = [];
+        // Headers is basically a keys of an
+        // object which is id, name, and
+        // profession
+        const headers = Object.keys(data);
+        // As for making csv format, headers
+        // must be separated by comma and
+        // pushing it into array
+        csvRows.push(headers.join(','));
+        // Pushing Object values into array
+        // with comma separation
+        const values = Object.values(data).join(',');
+        csvRows.push(values)
+        // Returning the array joining with new line
+        return csvRows.join('\n')
+    }
+
+    function end() {
+        clear();
+        var html = "The test end here, thanks for your participate!"
+        var avg = [];
+        var key = ['ST_N', 'C_1_N', 'C_1_T', 'C_2_N', 'C_2_T', 'C_3_N', 'C_3_T', 'C_4_N', 'C_4_T'];
+        var res_msg = ""
+        document.getElementById("main").innerHTML += html;
+        data.forEach(function (d) {
+            avg.push(d / total)
+        });
+        avg.forEach(function (row, id) {
+            res_msg += key[id] + ":" + row + "<br>"
+        });
+
+        /*把結果寄到這個信箱*/
+        Email.send({
+            Host: "smtp.elasticemail.com",
+            Username: "a309833002.cai09g@nctu.edu.tw",
+            Password: "8F4D1D24CF52D860C326286FEF5E5D0C17FF",
+            To: 'licaiwang99@gmail.com',
+            From: "a309833002.cai09g@nctu.edu.tw",
+            Subject: "Mos test",
+            Body: res_msg,
+        }).then(
+            message => alert(message)
+        );
+    }
+
+
+    function update() {
+        id_.forEach(function (idx, i) {
+            let element = document.getElementById(idx);
+            while (element.firstChild) {
+                element.removeChild(element.firstChild);
+            }
+        });
+
+    }
+
+    function addMainContent() {
+        var html = "<p id='p1'>Now Remaining pair --- 90</p><table><tr><td>Source</td><td>Target</td></tr><tr><td id='source'></td><td id='target'></td></tr></table></table><br><table><tr><td>Convert_1</td><td>Convert_2</td><td>Convert_3</td><td>Convert_4</td></tr><tr id='convert'><td id='c1'></td><td id='c2'></td><td id='c3'></td><td id='c4'></td></tr></table><br>";
+        document.getElementById("main").innerHTML = html;
+    }
+
+    function addLegend() {
+
+        var html_1 = "<fieldset'><legend>Source 與 Target 的語音自然度 </legend><label><input type='radio' name='s2t' value=1>1</label><label><input type='radio' name='s2t' value=2>2</label><label><input type='radio' name='s2t' value=3>3</label><label><input type='radio' name='s2t' value=4>4</label><label><input type='radio' name='s2t' value=5>5</label></fieldset>"
+        var html_2 = "<fieldset'><legend>Convert_1 的語音自然度 </legend><label><input type='radio' name='c11' value=1>1</label><label><input type='radio' name='c11' value=2>2</label><label><input type='radio' name='c11' value=3>3</label><label><input type='radio' name='c11' value=4>4</label><label><input type='radio' name='c11' value=5>5</label></fieldset>"
+        var html_3 = "<fieldset'><legend>Convert_1 與 Target 的相似度 </legend><label><input type='radio' name='c12' value=1>1</label><label><input type='radio' name='c12' value=2>2</label><label><input type='radio' name='c12' value=3>3</label><label><input type='radio' name='c12' value=4>4</label><label><input type='radio' name='c12' value=5>5</label></fieldset>"
+        var html_4 = "<fieldset'><legend>Convert_2 的語音自然度 </legend><label><input type='radio' name='c21' value=1>1</label><label><input type='radio' name='c21' value=2>2</label><label><input type='radio' name='c21' value=3>3</label><label><input type='radio' name='c21' value=4>4</label><label><input type='radio' name='c21' value=5>5</label></fieldset>"
+        var html_5 = "<fieldset'><legend>Convert_2 與 Target 的相似度 </legend><label><input type='radio' name='c22' value=1>1</label><label><input type='radio' name='c22' value=2>2</label><label><input type='radio' name='c22' value=3>3</label><label><input type='radio' name='c22' value=4>4</label><label><input type='radio' name='c22' value=5>5</label></fieldset>"
+        var html_6 = "<fieldset'><legend>Convert_3 的語音自然度 </legend><label><input type='radio' name='c31' value=1>1</label><label><input type='radio' name='c31' value=2>2</label><label><input type='radio' name='c31' value=3>3</label><label><input type='radio' name='c31' value=4>4</label><label><input type='radio' name='c31' value=5>5</label></fieldset>"
+        var html_7 = "<fieldset'><legend>Convert_3 與 Target 的相似度 </legend><label><input type='radio' name='c32' value=1>1</label><label><input type='radio' name='c32' value=2>2</label><label><input type='radio' name='c32' value=3>3</label><label><input type='radio' name='c32' value=4>4</label><label><input type='radio' name='c32' value=5>5</label></fieldset>"
+        var html_8 = "<fieldset'><legend>Convert_4 的語音自然度 </legend><label><input type='radio' name='c41' value=1>1</label><label><input type='radio' name='c41' value=2>2</label><label><input type='radio' name='c41' value=3>3</label><label><input type='radio' name='c41' value=4>4</label><label><input type='radio' name='c41' value=5>5</label></fieldset>"
+        var html_9 = "<fieldset'><legend>Convert_4 與 Target 的相似度 </legend><label><input type='radio' name='c42' value=1>1</label><label><input type='radio' name='c42' value=2>2</label><label><input type='radio' name='c42' value=3>3</label><label><input type='radio' name='c42' value=4>4</label><label><input type='radio' name='c42' value=5>5</label></fieldset>"
+
+        var bn = "<br><button onclick='next()' id='Next'>next</button>"
+
+        document.getElementById("main").innerHTML += html_1;
+        document.getElementById("main").innerHTML += html_2;
+        document.getElementById("main").innerHTML += html_3;
+        document.getElementById("main").innerHTML += html_4;
+        document.getElementById("main").innerHTML += html_5;
+        document.getElementById("main").innerHTML += html_6;
+        document.getElementById("main").innerHTML += html_7;
+        document.getElementById("main").innerHTML += html_8;
+        document.getElementById("main").innerHTML += html_9;
+
+        document.getElementById("main").innerHTML += bn;
+    }
+
+
+
+    function init() {
+        /* Init */
+        models.forEach(function (model, i) {
+            audio_paths.push(root + '/' + model + '/' + speakers[source_id] + '/' + speakers[target_id] + '.wav');
+            console.log(model);
+        });
+        var audio_source = root + '/source/source_' + speakers[source_id] + '.wav';
+        var audio_target = root + '/target/target_' + speakers[target_id] + '.wav';
+        var playSource = new Audio(audio_source);
+        var playTarget = new Audio(audio_target);
+        var playSound_1 = new Audio(audio_paths[0]);
+        var playSound_2 = new Audio(audio_paths[1]);
+        var playSound_3 = new Audio(audio_paths[2]);
+        var playSound_4 = new Audio(audio_paths[3]);
+        playSource.controls = true;
+        playTarget.controls = true;
+        playSound_1.controls = true;
+        playSound_2.controls = true;
+        playSound_3.controls = true;
+        playSound_4.controls = true;
+        document.getElementById('source').appendChild(playSource);
+        document.getElementById('target').appendChild(playTarget);
+        document.getElementById('c1').appendChild(playSound_1);
+        document.getElementById('c2').appendChild(playSound_2);
+        document.getElementById('c3').appendChild(playSound_3);
+        document.getElementById('c4').appendChild(playSound_4);
+
+    }
+
+    function next() {
+        /*clear main content*/
+        update();
+        /*clear audio path*/
+        audio_paths = [];
+
+        /*No recontruct */
+        if (target_id == source_id) {
+            target_id += 1;
+        }
+        /*Basic path*/
+        audio_target = root + '/target/target_' + speakers[target_id] + '.wav';
+        audio_source = root + '/source/source_' + speakers[source_id] + '.wav';
+
+        /*Move to next source*/
+        if (target_id > max_id) {
+            source_id += 1;
+            target_id = 0;
+            audio_target = root + '/target/target_' + speakers[target_id] + '.wav';
+            audio_source = root + '/source/source_' + speakers[source_id] + '.wav';
+        };
+        models.forEach(function (model, i) {
+            audio_paths.push(root + '/' + model + '/' + speakers[source_id] + '/' + speakers[target_id] + '.wav');
+        });
+
+
+        var playSource = new Audio(audio_source);
+        var playTarget = new Audio(audio_target);
+        var playSound_1 = new Audio(audio_paths[0]);
+        var playSound_2 = new Audio(audio_paths[1]);
+        var playSound_3 = new Audio(audio_paths[2]);
+        var playSound_4 = new Audio(audio_paths[3]);
+        playSource.controls = true;
+        playTarget.controls = true;
+        playSound_1.controls = true;
+        playSound_2.controls = true;
+        playSound_3.controls = true;
+        playSound_4.controls = true;
+        document.getElementById('source').appendChild(playSource);
+        document.getElementById('target').appendChild(playTarget);
+        document.getElementById('c1').appendChild(playSound_1);
+        document.getElementById('c2').appendChild(playSound_2);
+        document.getElementById('c3').appendChild(playSound_3);
+        document.getElementById('c4').appendChild(playSound_4);
+        get_check_box_value();
+        /* One pair done*/
+        total_pair -= 1;
+        target_id += 1;
+        document.getElementById("p1").innerHTML = "Remaining pair --- " + total_pair;
+        if (total_pair == 0) {
+            end();
+        }
+    }
+
+</script>
+
+
+</html>
