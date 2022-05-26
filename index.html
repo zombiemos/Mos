@@ -57,9 +57,13 @@
     <h4>注意事項：</h4>
     <ul>
         <li>測試時間約 30 分鐘
+        <li>測試的 4 段轉換聲音是隨機排序的，請務必每段都要確實聽過，謝謝!
+        <li>留個名字或暱稱好讓我請各位一杯
         </li>
     </ul>
-
+    <form>
+        名字或暱稱: <input type="text" id="who" value="請輸入您的大名"><br>
+    </form>
     <button onclick="start()" id="start">start</button>
 </body>
 
@@ -72,6 +76,7 @@
 <script>
     const id_ = ['source', 'target', 'c1', 'c2', 'c3', 'c4'];
     const total = 49;
+    var test_name = "default";
     var data = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     /*Local test*/
     /*var root = "generate_wav";*/
@@ -86,6 +91,7 @@
     let audio_paths = [];
 
     function start() {
+        test_name = document.getElementById('who').value;
         /* Clear page*/
         clear();
         var main = document.getElementById("main");
@@ -103,7 +109,7 @@
     }
 
 
-    function get_check_box_value() {
+    function get_check_box_value(real_id) {
         let all_select = [];
         all_select.push(document.querySelector('input[name="s2t"]:checked'));
         all_select.push(document.querySelector('input[name="c11"]:checked'));
@@ -115,7 +121,7 @@
         all_select.push(document.querySelector('input[name="c41"]:checked'));
         all_select.push(document.querySelector('input[name="c42"]:checked'));
         all_select.forEach(function (query, id) {
-            data[id] += Number(query.value);
+            data[real_id[id]] += Number(query.value);
             query.checked = false;
         });
     }
@@ -164,10 +170,11 @@
             res_msg += key[idx] + ":" + a + '\n'
         });
         var templateParams = {
+            from_name: String(test_name),
             message: String(res_msg),
         };
         const serviceID = 'service_gzxk2ln';
-        const templateID = 'template_x077csn';
+        const templateID = 'template_xjrhctf';
         emailjs.send(serviceID, templateID, templateParams)
             .then(function (response) {
                 console.log('SUCCESS!', response.status, response.text);
@@ -224,16 +231,20 @@
     function init() {
         /* Init */
         models.forEach(function (model, i) {
-            audio_paths.push(root + '/' + model + '/' + speakers[source_id] + '/' + speakers[target_id] + '.wav');
+            audio_paths.push([root + '/' + model + '/' + speakers[source_id] + '/' + speakers[target_id] + '.wav', model]);
         });
         var audio_source = root + '/source/source_' + speakers[source_id] + '.wav';
         var audio_target = root + '/target/target_' + speakers[target_id] + '.wav';
         var playSource = new Audio(audio_source);
         var playTarget = new Audio(audio_target);
-        var playSound_1 = new Audio(audio_paths[0]);
-        var playSound_2 = new Audio(audio_paths[1]);
-        var playSound_3 = new Audio(audio_paths[2]);
-        var playSound_4 = new Audio(audio_paths[3]);
+        /*random order*/
+        audio_paths = audio_paths.map(value => ({ value, sort: Math.random() }))
+            .sort((a, b) => a.sort - b.sort)
+            .map(({ value }) => value)
+        var playSound_1 = new Audio(audio_paths[0][0]);
+        var playSound_2 = new Audio(audio_paths[1][0]);
+        var playSound_3 = new Audio(audio_paths[2][0]);
+        var playSound_4 = new Audio(audio_paths[3][0]);
         playSource.controls = true;
         playTarget.controls = true;
         playSound_1.controls = true;
@@ -265,6 +276,7 @@
                 ischecked = false;
             }
         });
+
         return ischecked;
     }
 
@@ -272,6 +284,26 @@
         var ischecked = check_mos_score();
         /* check if all mos score is given*/
         if (ischecked == true) {
+            /* record the random order*/
+            var real_id = [0]
+            for (i = 0; i < 4; i++) {
+                if (audio_paths[i][1] == models[0]) {
+                    real_id.push(1);
+                    real_id.push(2);
+                }
+                if (audio_paths[i][1] == models[1]) {
+                    real_id.push(3);
+                    real_id.push(4);
+                }
+                if (audio_paths[i][1] == models[2]) {
+                    real_id.push(5);
+                    real_id.push(6);
+                }
+                if (audio_paths[i][1] == models[3]) {
+                    real_id.push(7);
+                    real_id.push(8);
+                }
+            }
             document.getElementById("Next").textContent = "next";
             /*clear main content*/
             update();
@@ -291,15 +323,20 @@
                 audio_target = root + '/target/target_' + speakers[target_id] + '.wav';
                 audio_source = root + '/source/source_' + speakers[source_id] + '.wav';
             };
+
             models.forEach(function (model, i) {
-                audio_paths.push(root + '/' + model + '/' + speakers[source_id] + '/' + speakers[target_id] + '.wav');
+                audio_paths.push([root + '/' + model + '/' + speakers[source_id] + '/' + speakers[target_id] + '.wav', model]);
             });
+            /*random order*/
+            audio_paths = audio_paths.map(value => ({ value, sort: Math.random() }))
+                .sort((a, b) => a.sort - b.sort)
+                .map(({ value }) => value)
             var playSource = new Audio(audio_source);
             var playTarget = new Audio(audio_target);
-            var playSound_1 = new Audio(audio_paths[0]);
-            var playSound_2 = new Audio(audio_paths[1]);
-            var playSound_3 = new Audio(audio_paths[2]);
-            var playSound_4 = new Audio(audio_paths[3]);
+            var playSound_1 = new Audio(audio_paths[0][0]);
+            var playSound_2 = new Audio(audio_paths[1][0]);
+            var playSound_3 = new Audio(audio_paths[2][0]);
+            var playSound_4 = new Audio(audio_paths[3][0]);
             playSource.controls = true;
             playTarget.controls = true;
             playSound_1.controls = true;
@@ -312,7 +349,7 @@
             document.getElementById('c2').appendChild(playSound_2);
             document.getElementById('c3').appendChild(playSound_3);
             document.getElementById('c4').appendChild(playSound_4);
-            get_check_box_value();
+            get_check_box_value(real_id);
             /* One pair done*/
             total_pair -= 1;
             target_id += 1;
@@ -320,8 +357,6 @@
             if (total_pair == 0) {
                 end();
             }
-            console.log
-
         }
         else {
             document.getElementById("Next").textContent = "Hey you miss some mos!";
