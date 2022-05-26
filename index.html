@@ -63,6 +63,11 @@
     <button onclick="start()" id="start">start</button>
 </body>
 
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<script type="text/javascript">
+    emailjs.init('YM2RPZ4TlCWyQpOzm')
+</script>
 
 <script>
     const id_ = ['source', 'target', 'c1', 'c2', 'c3', 'c4'];
@@ -134,41 +139,41 @@
         return csvRows.join('\n')
     }
 
-    function post(data, avg) {
-        const param = {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            mode: 'cors',
-            body: JSON.stringify({
-                data: JSON.stringify(data),
-                avg: JSON.stringify(avg)
-            })
-        };
-
-        fetch('http://140.113.110.97:8765', param)
-            .then(async res => {
-                res.text().then(res_text => {
-                    console.log(res_text)
-                    console.log(res_text == "success")
-                })
-            }).catch((err) => {
-                console.log('錯誤:', err);
-            });
-    }
-
     function end() {
         clear();
         var html = "The test end here, thanks for your participate!"
         var avg = [];
-        var res_msg = ""
+        var key = [
+            "ST_N",
+            "C_1_N",
+            "C_1_T",
+            "C_2_N",
+            "C_2_T",
+            "C_3_N",
+            "C_3_T",
+            "C_4_N",
+            "C_4_T",
+        ];
+        var res_msg = "";
+
         document.getElementById("main").innerHTML += html;
         data.forEach(function (d) {
             avg.push(d / total)
         });
-
-        post(data, avg)
+        avg.forEach(function (a, idx) {
+            res_msg += key[idx] + ":" + a + '\n'
+        });
+        var templateParams = {
+            message: String(res_msg),
+        };
+        const serviceID = 'service_gzxk2ln';
+        const templateID = 'template_x077csn';
+        emailjs.send(serviceID, templateID, templateParams)
+            .then(function (response) {
+                console.log('SUCCESS!', response.status, response.text);
+            }, function (error) {
+                console.log('FAILED...', error);
+            });
     }
 
 
