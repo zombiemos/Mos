@@ -153,8 +153,9 @@
                     console.log(res_text)
                     console.log(res_text == "success")
                 })
-            })
-
+            }).catch((err) => {
+                console.log('錯誤:', err);
+            });
     }
 
     function end() {
